@@ -1,0 +1,47 @@
+CREATE TABLE textnode (
+    id INT PRIMARY KEY,
+    text VARCHAR(255) NOT NULL,
+    adjacentnode integer[],
+    skip BOOLEAN NOT NULL
+)
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (1, 'Hi! This is LISA. I have a great shift opportunity for you! Are you Interested in hearing about it? Please respond ''Yes'' or ''No''', '{2,3}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (2, 'Yes', '{5}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (3, 'No', '{15}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (5, 'Great the shift is at 1313 Mockingbird Ln at 2/15/2021 4:00pm-12:00am.\n we will see you there!', '{}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (6, '1', '{10}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (7, '2', '{11}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (8, '3', '{12}', true);
+
+INSERT INTO chat_node (id, text, adj_list, last_question)
+VALUES (9,'I m sorry, I didnt understand your response', '{1}', false)
+
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (10, 'Thanks for letting me know. I''ll avoid offering shifts at this location in the future', '{}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (11, 'Thanks for letting me know. I''ll avoid offering shifts at this time in the future', '{}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (12, 'Ok. Thanks. I won''t offer shifts at this location or time in the future.', '{}', true);
+
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (14, 'I''m sorry, I didn''t understand your response', '{15}', true);
+
+INSERT INTO textnode (id, text, adjacentnode, skip)
+VALUES (15, 'Ok, thanks. Can you let me know why not?\n Respond 1: Too far Respond\n 2: Not available\n Respond 3: Other', '{6,7,8}', true);

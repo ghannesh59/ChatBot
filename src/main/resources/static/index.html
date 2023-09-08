@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chatbot Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    #username-container, #chat-container {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #chat-container {
+      display: none;
+    }
+    #chat-messages {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    #chat-input {
+      max-width: 375px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .message-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .message-bubble {
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+
+    .user-bubble {
+      background-color: #007bff;
+      color: white;
+      align-self: flex-end;
+    }
+
+    .other-bubble {
+      background-color: #f5f5f5;
+      color: #333;
+      align-self: flex-start;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div id="username-container">
+  <form id="username-form">
+    <label for="username">Enter your username:</label>
+    <input type="text" id="username" />
+    <button type="submit" id="username-button">Submit</button>
+  </form>
+</div>
+
+<div id="chat-container">
+  <h3>Chatting with Lisa</h3>
+  <div id="chat-messages"></div>
+  <input type="text" id="chat-input" placeholder="Type your message..." />
+  <button id="send-button">Send</button>
+</div>
+
+<script>
+  const usernameContainer = document.getElementById("username-container")
+  const usernameForm = document.getElementById('username-form');
+  const usernameInput = document.getElementById('username');
+  const chatContainer = document.getElementById('chat-container');
+  const chatInput = document.getElementById('chat-input');
+  const sendButton = document.getElementById('send-button');
+  const chatMessages = document.getElementById('chat-messages');
+  let stompClient;
+  let username;
+
+  function appendMessage(message, isUser) {
+    const messageContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
+
+    messageContainer.classList.add('message-container');
+    messageBubble.classList.add('message-bubble');
+
+    if (isUser) {
+      messageBubble.classList.add('user-bubble');
+    } else {
+      messageBubble.classList.add('other-bubble');
+    }
+
+    messageBubble.innerText = message;
+    messageContainer.appendChild(messageBubble);
+
+    chatMessages.appendChild(messageContainer);
+    chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+  }
+
+  function setupWebSocket() {
+    const socket = new SockJS('http://localhost:8080/websocket');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, () => {
+      const dynamicTopic = `/queue/messages/${username}`;
+      stompClient.subscribe(dynamicTopic, message => {
+        const messageContent = message.body;
+        appendMessage(messageContent);
+      });
+    });
+  }
+
+  usernameForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent default form submission
+
+    username = usernameInput.value.trim();
+    if (username !== '') {
+      event.stopPropagation(); // Stop event propagation to parent elements
+      try {
+        const response = await axios.post('/storeUsername', username, {
+          headers: {
+            'Content-Type': 'text/plain',
+          }
+        });
+
+        if (response.status === 200) {
+          usernameForm.style.display = 'none';
+          chatContainer.style.display = 'block';
+          usernameContainer.style.display = "none";
+          appendMessage(response.data);
+          setupWebSocket();
+        } else {
+          console.error('Failed to store username.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+  });
+
+
+  sendButton.addEventListener('click', () => {
+    const message = chatInput.value.trim();
+    if (message !== '' && stompClient) {
+      const dynamicTopic = `/app/chat/${username}`;
+      stompClient.send(dynamicTopic, {}, JSON.stringify({ content: message }));
+      appendMessage(message, true); // User message
+      chatInput.value = '';
+    }
+  });
+
+  chatInput.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+      sendButton.click();
+    }
+  });
+</script>
+</body>
+</html>

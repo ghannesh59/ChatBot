@@ -1,0 +1,6 @@
+CREATE TABLE chat_logs (
+    user_id VARCHAR(255) PRIMARY KEY,
+    timestamp TIMESTAMP,
+    message TEXT,
+    response TEXT
+);
